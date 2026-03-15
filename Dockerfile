@@ -1,13 +1,11 @@
 FROM python:3.11-slim
 
-# Dependências do sistema — incluindo libGL para OpenCV
 RUN apt-get update && apt-get install -y \
     ffmpeg curl wget unzip \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar Deno
@@ -23,8 +21,6 @@ RUN wget -q "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
 
 WORKDIR /app
 COPY app/requirements.txt .
-
-# Instalar dependências Python — opencv-python-headless não precisa de libGL
 RUN pip install --no-cache-dir -r requirements.txt && \
     python -c "import cv2; print('OpenCV OK:', cv2.__version__)"
 
