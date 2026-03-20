@@ -1,0 +1,6 @@
+flask>=3.0.0
+yt-dlp>=2024.1.1
+requests>=2.31.0
+opencv-python-headless>=4.8.0
+mediapipe==0.10.9
+faster-whisper>=1.0.0
