@@ -265,18 +265,56 @@ async function loadProfile(profileId) {
 async function switchProfile(profileId) { await loadProfile(profileId); }
 
 async function newProfile() {
-  const name = prompt('Nome do novo perfil (ex: Culinária, Espiritualidade):');
-  if (!name) return;
-  const id = 'profile_' + Date.now();
-  const newP = {id, name, context:'', preferences:'', instructions:'', channels:[]};
-  await fetch(`/profiles/${id}`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newP)
+  showModal('Novo perfil', 'Digite o nome do nicho (ex: Empreendedorismo, Culinária):', '', async (name) => {
+    if (!name.trim()) return;
+    const id = 'profile_' + Date.now();
+    const newP = {id, name: name.trim(), context:'', preferences:'', instructions:'', channels:[]};
+    await fetch(`/profiles/${id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newP)
+    });
+    allProfiles[id] = newP;
+    currentProfileId = id;
+    renderProfileSelect();
+    document.getElementById('profile-select').value = id;
+    await loadProfile(id);
   });
-  allProfiles[id] = newP;
-  currentProfileId = id;
-  renderProfileSelect();
-  document.getElementById('profile-select').value = id;
-  await loadProfile(id);
+}
+
+function showModal(title, label, defaultVal, onConfirm) {
+  // Remove modal existente
+  document.getElementById('custom-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'custom-modal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;
+    display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#1a1a22;border:1px solid #2a2a35;border-radius:16px;
+                padding:24px;width:340px;max-width:90vw;">
+      <h3 style="margin:0 0 8px;font-size:15px;color:#f0f0f5;">${title}</h3>
+      <p style="margin:0 0 14px;font-size:12px;color:#888;">${label}</p>
+      <input id="modal-input" type="text" value="${defaultVal}"
+        style="width:100%;background:#0f0f13;border:1px solid #FF5C1A;border-radius:8px;
+               color:#f0f0f5;font-size:13px;padding:9px 12px;box-sizing:border-box;outline:none;"
+        placeholder="Nome do perfil...">
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+        <button onclick="document.getElementById('custom-modal').remove()"
+          style="padding:7px 16px;border-radius:8px;border:1px solid #2a2a35;
+                 background:transparent;color:#888;cursor:pointer;font-size:12px;">Cancelar</button>
+        <button id="modal-ok"
+          style="padding:7px 16px;border-radius:8px;border:none;
+                 background:#FF5C1A;color:#fff;cursor:pointer;font-size:12px;font-weight:600;">Criar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const input = document.getElementById('modal-input');
+  const ok = document.getElementById('modal-ok');
+  input.focus();
+  input.select();
+  const confirm = () => { modal.remove(); onConfirm(input.value); };
+  ok.onclick = confirm;
+  input.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') modal.remove(); };
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
 async function deleteProfile() {
