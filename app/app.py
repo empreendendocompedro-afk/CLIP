@@ -2321,57 +2321,6 @@ def agent_clear():
     return jsonify({"ok": True})
 
 
-@app.route("/agent")
-def agent_page():
-    """Interface de chat com o agente ViralCut AI."""
-    return render_template("agent.html")
-
-
-@app.route("/agent/chat", methods=["POST"])
-def agent_chat():
-    """
-    Endpoint de chat multi-turno com o agente.
-    Recebe histórico completo + system prompt do frontend.
-    O contexto (nicho, público, canal) fica no localStorage do usuário
-    e é enviado como system prompt em cada mensagem.
-    """
-    if not ANTHROPIC_KEY:
-        return jsonify({"error": "ANTHROPIC_API_KEY não configurada"}), 400
-
-    data     = request.json or {}
-    messages = data.get("messages", [])
-    system   = data.get("system", "Você é o ViralCut AI, especialista em conteúdo viral.")
-
-    if not messages:
-        return jsonify({"error": "Nenhuma mensagem enviada"}), 400
-
-    try:
-        resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key":         ANTHROPIC_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type":      "application/json",
-            },
-            json={
-                "model":      "claude-sonnet-4-5",
-                "max_tokens": 2048,
-                "system":     system,
-                "messages":   messages[-20:],  # últimas 20 mensagens
-            },
-            timeout=60
-        )
-        if resp.status_code != 200:
-            return jsonify({"error": f"Claude API: {resp.status_code}"}), 500
-
-        content_out = resp.json()["content"][0]["text"]
-        return jsonify({"content": content_out})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# health route registrado no topo do arquivo
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",5000))
