@@ -3,222 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ViralCut AI — Agente Analista</title>
+<title>ViralCut AI — Agente</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0f0f13; --card: #1a1a23; --border: #2a2a38;
-    --orange: #FF5C1A; --text: #f0f0f0; --muted: #888;
-    --green: #2ecc71; --blue: #3498db; --user-bg: #1e2a3a;
-  }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif;
-         height: 100vh; display: flex; flex-direction: column; }
+:root { --bg:#0f0f13; --surface:#1a1a22; --border:#2a2a35; --text:#f0f0f5; --muted:#888; --orange:#FF5C1A; --green:#2ecc71; --blue:#3498db; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-  /* Header */
-  .header { padding: 14px 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .header-logo { width: 36px; height: 36px; background: var(--orange);
-                 border-radius: 10px; display: flex; align-items: center;
-                 justify-content: center; font-size: 18px; }
-  .header-title { font-size: 16px; font-weight: 700; }
-  .header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .badge { font-size: 10px; padding: 3px 8px; border-radius: 20px;
-           background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+/* Header */
+.header { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.agent-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--orange),#ff8c00); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.agent-info h1 { font-size:15px; font-weight:700; }
+.agent-info p { font-size:11px; color:var(--muted); }
+.header a { margin-left:auto; font-size:12px; padding:6px 14px; border-radius:8px; background:var(--orange); color:#fff; text-decoration:none; }
+.header button { font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
 
-  /* Layout */
-  .main { display: flex; flex: 1; overflow: hidden; }
+/* Layout */
+.main { display:flex; flex:1; overflow:hidden; }
 
-  /* Sidebar — Contexto */
-  .sidebar { width: 280px; border-right: 1px solid var(--border);
-             display: flex; flex-direction: column; flex-shrink: 0; }
-  .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-  .sidebar-title { font-size: 10px; font-weight: 700; letter-spacing: .1em;
-                   text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-  .context-item { background: var(--bg); border: 1px solid var(--border);
-                  border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
-                  cursor: pointer; transition: border-color .15s; position: relative; }
-  .context-item:hover { border-color: var(--orange); }
-  .context-item.active { border-color: var(--orange); background: rgba(255,92,26,0.05); }
-  .context-item .ci-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
-  .context-item .ci-sub { font-size: 10px; color: var(--muted); }
-  .context-item .ci-del { position: absolute; top: 8px; right: 8px;
-                          font-size: 14px; color: var(--muted); cursor: pointer;
-                          opacity: 0; transition: opacity .15s; }
-  .context-item:hover .ci-del { opacity: 1; }
-  .btn-add-context { width: 100%; padding: 8px; border-radius: 8px;
-                     border: 1px dashed var(--border); background: transparent;
-                     color: var(--muted); font-size: 12px; cursor: pointer;
-                     transition: all .15s; }
-  .btn-add-context:hover { border-color: var(--orange); color: var(--orange); }
+/* Sidebar */
+.sidebar { width:270px; background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; flex-shrink:0; }
+.sb { padding:12px 14px; border-bottom:1px solid var(--border); }
+.sb-title { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.sb textarea, .sb input[type=text] { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; padding:7px 9px; font-family:inherit; resize:vertical; }
+.sb textarea { min-height:60px; }
+.sb textarea:focus, .sb input:focus { outline:none; border-color:var(--orange); }
+.btn-save { width:100%; margin-top:7px; padding:7px; border-radius:8px; border:none; background:var(--orange); color:#fff; font-size:12px; font-weight:600; cursor:pointer; }
+.saved { display:none; font-size:11px; color:var(--green); text-align:center; margin-top:4px; }
 
-  /* Presets rápidos */
-  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .preset-btn { padding: 7px 6px; border-radius: 8px; border: 1px solid var(--border);
-                background: transparent; color: var(--text); font-size: 10px;
-                cursor: pointer; text-align: center; transition: all .15s; }
-  .preset-btn:hover { border-color: var(--orange); color: var(--orange); }
+/* Chat */
+.chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+.msg { display:flex; gap:8px; max-width:88%; }
+.msg.user { align-self:flex-end; flex-direction:row-reverse; }
+.avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; background:var(--border); }
+.msg.agent .avatar { background:linear-gradient(135deg,var(--orange),#ff8c00); }
+.msg.user .avatar { background:var(--blue); }
+.bubble { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:9px 13px; font-size:13px; line-height:1.6; white-space:pre-wrap; }
+.msg.user .bubble { background:var(--orange); border-color:var(--orange); color:#fff; border-radius:14px 14px 4px 14px; }
+.msg.agent .bubble { border-radius:14px 14px 14px 4px; }
 
-  /* Chat */
-  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex;
-              flex-direction: column; gap: 16px; }
-  .msg { display: flex; gap: 10px; max-width: 85%; }
-  .msg.user { margin-left: auto; flex-direction: row-reverse; }
-  .msg-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-                display: flex; align-items: center; justify-content: center; font-size: 14px; }
-  .msg.assistant .msg-avatar { background: rgba(255,92,26,0.2); }
-  .msg.user .msg-avatar { background: var(--user-bg); }
-  .msg-bubble { padding: 12px 16px; border-radius: 14px; font-size: 13px;
-                line-height: 1.6; max-width: 100%; }
-  .msg.assistant .msg-bubble { background: var(--card); border: 1px solid var(--border); }
-  .msg.user .msg-bubble { background: var(--user-bg); border: 1px solid #2a3a4a; }
-  .msg-bubble pre { background: var(--bg); border-radius: 8px; padding: 10px 12px;
-                    font-size: 11px; overflow-x: auto; margin-top: 8px;
-                    border: 1px solid var(--border); white-space: pre-wrap; }
-  .msg-bubble strong { color: var(--orange); }
-  .typing { display: flex; gap: 4px; padding: 4px 0; }
-  .typing span { width: 7px; height: 7px; background: var(--muted); border-radius: 50%;
-                 animation: bounce .9s infinite; }
-  .typing span:nth-child(2) { animation-delay: .15s; }
-  .typing span:nth-child(3) { animation-delay: .3s; }
-  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+/* Typing */
+.dots span { display:inline-block; width:6px; height:6px; background:var(--muted); border-radius:50%; animation:bounce .8s infinite; margin:0 2px; }
+.dots span:nth-child(2){animation-delay:.15s} .dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
 
-  /* Input */
-  .input-area { padding: 14px 16px; border-top: 1px solid var(--border); }
-  .input-row { display: flex; gap: 8px; align-items: flex-end; }
-  .input-box { flex: 1; background: var(--card); border: 1px solid var(--border);
-               border-radius: 12px; padding: 10px 14px; color: var(--text);
-               font-size: 13px; resize: none; outline: none; min-height: 44px;
-               max-height: 150px; font-family: inherit; transition: border-color .15s; }
-  .input-box:focus { border-color: var(--orange); }
-  .btn-send { width: 44px; height: 44px; border-radius: 12px; background: var(--orange);
-              border: none; color: #fff; font-size: 18px; cursor: pointer;
-              display: flex; align-items: center; justify-content: center;
-              transition: opacity .15s; flex-shrink: 0; }
-  .btn-send:disabled { opacity: .4; cursor: default; }
-  .input-hint { font-size: 10px; color: var(--muted); margin-top: 6px; }
+/* Input */
+.input-wrap { padding:12px 16px; background:var(--surface); border-top:1px solid var(--border); display:flex; gap:8px; align-items:flex-end; }
+.input-wrap textarea { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; padding:9px 12px; resize:none; max-height:100px; font-family:inherit; }
+.input-wrap textarea:focus { outline:none; border-color:var(--orange); }
+.btn-send { width:38px; height:38px; border-radius:10px; border:none; background:var(--orange); color:#fff; font-size:16px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.btn-send:disabled { opacity:.4; }
 
-  /* Modal contexto */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7);
-                   display: flex; align-items: center; justify-content: center;
-                   z-index: 100; display: none; }
-  .modal { background: var(--card); border: 1px solid var(--border);
-           border-radius: 16px; padding: 24px; width: 480px; max-width: 95vw; }
-  .modal h3 { font-size: 16px; margin-bottom: 16px; }
-  .modal input, .modal textarea { width: 100%; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-    color: var(--text); font-size: 13px; margin-bottom: 12px; outline: none;
-    font-family: inherit; }
-  .modal textarea { min-height: 120px; resize: vertical; }
-  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
-  .btn-primary { padding: 8px 20px; border-radius: 8px; background: var(--orange);
-                 border: none; color: #fff; font-size: 13px; cursor: pointer; }
-  .btn-secondary { padding: 8px 20px; border-radius: 8px; background: transparent;
-                   border: 1px solid var(--border); color: var(--muted);
-                   font-size: 13px; cursor: pointer; }
-  a.back-link { color: var(--muted); font-size: 12px; text-decoration: none;
-                display: flex; align-items: center; gap: 4px; }
-  a.back-link:hover { color: var(--text); }
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* Quick prompts */
+.qps { padding:0 16px 10px; display:flex; gap:5px; flex-wrap:wrap; background:var(--surface); }
+.qp { font-size:11px; padding:4px 9px; border-radius:16px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+.qp:hover { border-color:var(--orange); color:var(--orange); }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:center; justify-content:center; }
+.modal-box { background:#1a1a22; border:1px solid #3a3a45; border-radius:16px; padding:24px; width:340px; max-width:92vw; }
+.modal-box h3 { font-size:15px; margin:0 0 6px; }
+.modal-box p { font-size:12px; color:var(--muted); margin:0 0 12px; }
+.modal-box input { width:100%; background:var(--bg); border:2px solid var(--orange); border-radius:8px; color:var(--text); font-size:13px; padding:9px 12px; outline:none; }
+.modal-btns { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
+.modal-btns button { padding:7px 18px; border-radius:8px; font-size:12px; cursor:pointer; }
+.btn-cancel { border:1px solid var(--border); background:transparent; color:var(--muted); }
+.btn-ok { border:none; background:var(--orange); color:#fff; font-weight:600; }
+
+/* Empty */
+.empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); text-align:center; padding:40px; }
+.empty .icon { font-size:44px; }
+.empty h2 { font-size:16px; color:var(--text); }
+.empty p { font-size:12px; max-width:280px; line-height:1.6; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-logo">🤖</div>
-  <div>
-    <div class="header-title">ViralCut AI — Agente Analista</div>
-    <div class="header-sub">Especialista em conteúdo viral para redes sociais</div>
+  <div class="agent-avatar">🤖</div>
+  <div class="agent-info">
+    <h1>ViralCut AI</h1>
+    <p>Agente especialista em conteúdo viral</p>
   </div>
-  <div class="header-right">
-    <span class="badge">● Online</span>
-    <a href="/" class="back-link">← App</a>
-  </div>
+  <button onclick="clearChat()">🗑 Limpar chat</button>
+  <a href="/">← Voltar</a>
 </div>
 
 <div class="main">
-  <!-- Sidebar — Perfis Múltiplos -->
+
+  <!-- Sidebar -->
   <div class="sidebar">
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">🎭 Perfil Ativo</div>
+    <!-- Seletor de perfil -->
+    <div class="sb">
+      <div class="sb-title">🎭 Perfil Ativo</div>
       <div style="display:flex;gap:6px;align-items:center;">
         <select id="profile-select" onchange="switchProfile(this.value)"
-          style="flex:1;background:var(--bg);border:1px solid var(--border);
-                 color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px;">
+          style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px;">
+          <option value="default">Padrão</option>
         </select>
-        <button onclick="newProfile()" title="Novo perfil"
-          style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
-                 background:transparent;color:var(--orange);font-size:18px;
-                 cursor:pointer;flex-shrink:0;line-height:1;">+</button>
+        <button id="btn-new-profile" title="Novo perfil"
+          style="width:32px;height:32px;border-radius:8px;border:1px solid var(--orange);background:transparent;color:var(--orange);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:300;">+</button>
       </div>
-      <div id="profile-channels" style="font-size:10px;color:var(--muted);margin-top:6px;"></div>
+      <div id="profile-channels" style="font-size:10px;color:var(--muted);margin-top:5px;"></div>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">📺 Nome e Canais</div>
-      <input id="mem-name" placeholder="Nome (ex: Empreendedorismo)"
-        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-               color:var(--text);font-size:12px;padding:7px 10px;margin-bottom:6px;box-sizing:border-box;">
-      <input id="mem-channels" placeholder="@canal1, @canal2"
-        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-               color:var(--text);font-size:12px;padding:7px 10px;box-sizing:border-box;">
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Perfil carrega automaticamente pelo canal</div>
+    <!-- Nome e canais -->
+    <div class="sb">
+      <div class="sb-title">📺 Nome e Canais</div>
+      <input type="text" id="mem-name" placeholder="Nome do perfil" style="margin-bottom:6px;">
+      <input type="text" id="mem-channels" placeholder="@canal1, @canal2">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Carrega automaticamente pelo canal detectado</div>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">🎯 Contexto do Nicho</div>
+    <!-- Contexto -->
+    <div class="sb">
+      <div class="sb-title">🎯 Contexto do Nicho</div>
       <textarea id="mem-context" placeholder="Ex: Podcast de empreendedorismo para empresários 30-50 anos..."></textarea>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">✂️ Preferências de Corte</div>
-      <textarea id="mem-preferences" placeholder="Ex: Priorizar revelações pessoais, evitar conteúdo técnico..."></textarea>
+    <!-- Preferências -->
+    <div class="sb">
+      <div class="sb-title">✂️ Preferências de Corte</div>
+      <textarea id="mem-preferences" placeholder="Ex: Priorizar revelações pessoais, evitar técnico..."></textarea>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">📌 Instruções Especiais</div>
-      <textarea id="mem-instructions" placeholder="Ex: Score mínimo 85, máximo 3 clipes por vídeo..."></textarea>
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <button class="btn-save" onclick="saveMemory()" style="flex:1;">💾 Salvar perfil</button>
-        <button onclick="deleteProfile()" id="btn-delete"
-          style="padding:7px 10px;border-radius:8px;border:1px solid #e74c3c;
-                 background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;display:none;">🗑</button>
+    <!-- Instruções -->
+    <div class="sb">
+      <div class="sb-title">📌 Instruções Especiais</div>
+      <textarea id="mem-instructions" placeholder="Ex: Score mínimo 85, máximo 3 clipes..."></textarea>
+      <div style="display:flex;gap:6px;margin-top:7px;">
+        <button class="btn-save" onclick="saveProfile()" style="flex:1;">💾 Salvar perfil</button>
+        <button id="btn-delete" onclick="deleteProfile()"
+          style="padding:7px 10px;border-radius:8px;border:1px solid #e74c3c;background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;display:none;">🗑</button>
       </div>
-      <div class="saved-badge" id="saved-badge">✅ Salvo!</div>
+      <div class="saved" id="saved-badge">✅ Salvo!</div>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">📊 Status</div>
-      <div id="memory-status" style="font-size:11px;color:var(--muted);line-height:1.7;"></div>
+    <!-- Status -->
+    <div class="sb">
+      <div class="sb-title">📊 Status</div>
+      <div id="memory-status" style="font-size:11px;color:var(--muted);line-height:1.7;">Carregando...</div>
     </div>
+
   </div>
+
   <!-- Chat -->
   <div class="chat-area">
-    <div class="messages scrollbar-thin" id="messages"></div>
-    <div class="input-area">
-      <div class="input-row">
-        <textarea class="input-box" id="user-input" placeholder="Fale com o agente... (Enter para enviar, Shift+Enter para nova linha)"
-                  onkeydown="handleKey(event)" rows="1" oninput="autoResize(this)"></textarea>
-        <button class="btn-send" id="btn-send" onclick="sendMessage()">➤</button>
+    <div class="messages" id="messages">
+      <div class="empty" id="empty-state">
+        <div class="icon">🤖</div>
+        <h2>ViralCut AI</h2>
+        <p>Olá! Sou seu agente especialista em conteúdo viral. Configure um perfil na barra lateral e comece a conversar.</p>
       </div>
-      <div class="input-hint">O agente usa o contexto da barra lateral em todas as análises de vídeo</div>
+      <div class="msg agent" id="typing" style="display:none;">
+        <div class="avatar">🤖</div>
+        <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>
+
+    <div class="qps">
+      <button class="qp" onclick="quickSend('Como você analisa um clipe viral?')">Como você analisa?</button>
+      <button class="qp" onclick="quickSend('Quais gatilhos funcionam melhor no TikTok brasileiro?')">Gatilhos TikTok BR</button>
+      <button class="qp" onclick="quickSend('Como definir a duração ideal dos clipes para meu nicho?')">Duração ideal</button>
+      <button class="qp" onclick="quickSend('Dicas para melhorar os hooks de abertura dos clipes')">Hooks de abertura</button>
+    </div>
+
+    <div class="input-wrap">
+      <textarea id="user-input" placeholder="Fale com o agente... (Enter envia, Shift+Enter nova linha)"
+        rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="btn-send" onclick="sendMsg()">➤</button>
     </div>
   </div>
+
 </div>
 
-<!-- Modal adicionar contexto -->
-<div class="modal-overlay" id="context-modal">
-  <div class="modal">
-    <h3>📎 Adicionar Contexto</h3>
-    <input type="text" id="ctx-title" placeholder="Título (ex: Meu nicho, Público-alvo, Canal)" />
-    <textarea id="ctx-content" placeholder="Descreva o contexto...&#10;Ex: Meu canal é sobre empreendedorismo para jovens de 18-30 anos. O público valoriza autenticidade e praticidade. Os vídeos que mais performam são histórias pessoais com lição no final."></textarea>
+<!-- Modal customizado -->
+<div class="modal-overlay" id="modal" style="display:none;" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <h3 id="modal-title">Novo Perfil</h3>
+    <p id="modal-label">Digite o nome do nicho:</p>
+    <input type="text" id="modal-input" placeholder="Ex: Empreendedorismo, Culinária, Espiritualidade..."
+      onkeydown="modalKey(event)">
     <div class="modal-btns">
-      <button class="btn-secondary" onclick="closeContextModal()">Cancelar</button>
-      <button class="btn-primary" onclick="saveContext()">Salvar</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-ok" onclick="confirmModal()">Criar perfil</button>
     </div>
   </div>
 </div>
@@ -227,6 +196,34 @@
 let isLoading = false;
 let currentProfileId = 'default';
 let allProfiles = {};
+let modalCallback = null;
+
+// ── Modal ────────────────────────────────────────────────────
+function openModal(title, label, cb) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-label').textContent = label;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal').style.display = 'flex';
+  document.getElementById('modal-input').focus();
+  modalCallback = cb;
+}
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  modalCallback = null;
+}
+function closeModalOutside(e) {
+  if (e.target.id === 'modal') closeModal();
+}
+function confirmModal() {
+  const val = document.getElementById('modal-input').value.trim();
+  if (!val) { document.getElementById('modal-input').focus(); return; }
+  closeModal();
+  if (modalCallback) modalCallback(val);
+}
+function modalKey(e) {
+  if (e.key === 'Enter') confirmModal();
+  if (e.key === 'Escape') closeModal();
+}
 
 // ── Perfis ───────────────────────────────────────────────────
 async function loadProfiles() {
@@ -234,151 +231,121 @@ async function loadProfiles() {
     const r = await fetch('/profiles');
     allProfiles = await r.json();
     if (!allProfiles['default']) {
-      allProfiles['default'] = {id:'default',name:'Padrão',context:'',preferences:'',instructions:'',channels:[]};
+      allProfiles['default'] = {id:'default', name:'Padrão', context:'', preferences:'', instructions:'', channels:[]};
     }
-    renderProfileSelect();
-    await loadProfile(currentProfileId);
-  } catch(e) { console.error(e); }
+    renderSelect();
+    loadProfile(currentProfileId);
+  } catch(e) {
+    console.error('Erro ao carregar perfis:', e);
+    updateStatus({});
+  }
 }
 
-function renderProfileSelect() {
+function renderSelect() {
   const sel = document.getElementById('profile-select');
-  sel.innerHTML = Object.values(allProfiles).map(p =>
-    `<option value="${p.id}" ${p.id===currentProfileId?'selected':''}>${p.name||p.id}</option>`
-  ).join('');
+  sel.innerHTML = Object.values(allProfiles)
+    .map(p => `<option value="${p.id}" ${p.id===currentProfileId?'selected':''}>${p.name||p.id}</option>`)
+    .join('');
 }
 
-async function loadProfile(profileId) {
-  currentProfileId = profileId;
-  const p = allProfiles[profileId] || {};
+function loadProfile(id) {
+  currentProfileId = id;
+  const p = allProfiles[id] || {name:'', context:'', preferences:'', instructions:'', channels:[]};
   document.getElementById('mem-name').value         = p.name         || '';
   document.getElementById('mem-context').value      = p.context      || '';
   document.getElementById('mem-preferences').value  = p.preferences  || '';
   document.getElementById('mem-instructions').value = p.instructions || '';
   document.getElementById('mem-channels').value     = (p.channels||[]).join(', ');
-  const chEl = document.getElementById('profile-channels');
-  chEl.innerHTML = p.channels?.length ? '🔗 ' + p.channels.join(', ') : 'Nenhum canal vinculado';
-  document.getElementById('btn-delete').style.display = profileId !== 'default' ? 'block' : 'none';
-  updateMemoryStatus(p);
+  document.getElementById('profile-channels').textContent =
+    p.channels?.length ? '🔗 ' + p.channels.join(', ') : 'Sem canais vinculados';
+  document.getElementById('btn-delete').style.display = id !== 'default' ? 'inline-block' : 'none';
+  updateStatus(p);
 }
 
-async function switchProfile(profileId) { await loadProfile(profileId); }
+function switchProfile(id) { loadProfile(id); }
 
-async function newProfile() {
-  showModal('Novo perfil', 'Digite o nome do nicho (ex: Empreendedorismo, Culinária):', '', async (name) => {
-    if (!name.trim()) return;
-    const id = 'profile_' + Date.now();
-    const newP = {id, name: name.trim(), context:'', preferences:'', instructions:'', channels:[]};
-    await fetch(`/profiles/${id}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newP)
-    });
-    allProfiles[id] = newP;
-    currentProfileId = id;
-    renderProfileSelect();
-    document.getElementById('profile-select').value = id;
-    await loadProfile(id);
+document.getElementById('btn-new-profile').addEventListener('click', function() {
+  openModal('Novo Perfil', 'Nome do nicho (ex: Empreendedorismo, Culinária):', async function(name) {
+    const id = 'p_' + Date.now();
+    const newP = {id, name, context:'', preferences:'', instructions:'', channels:[]};
+    try {
+      await fetch('/profiles/' + id, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(newP)
+      });
+      allProfiles[id] = newP;
+      currentProfileId = id;
+      renderSelect();
+      document.getElementById('profile-select').value = id;
+      loadProfile(id);
+    } catch(e) { alert('Erro ao criar perfil: ' + e.message); }
   });
-}
-
-function showModal(title, label, defaultVal, onConfirm) {
-  // Remove modal existente
-  document.getElementById('custom-modal')?.remove();
-  const modal = document.createElement('div');
-  modal.id = 'custom-modal';
-  modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;
-    display:flex;align-items:center;justify-content:center;`;
-  modal.innerHTML = `
-    <div style="background:#1a1a22;border:1px solid #2a2a35;border-radius:16px;
-                padding:24px;width:340px;max-width:90vw;">
-      <h3 style="margin:0 0 8px;font-size:15px;color:#f0f0f5;">${title}</h3>
-      <p style="margin:0 0 14px;font-size:12px;color:#888;">${label}</p>
-      <input id="modal-input" type="text" value="${defaultVal}"
-        style="width:100%;background:#0f0f13;border:1px solid #FF5C1A;border-radius:8px;
-               color:#f0f0f5;font-size:13px;padding:9px 12px;box-sizing:border-box;outline:none;"
-        placeholder="Nome do perfil...">
-      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
-        <button onclick="document.getElementById('custom-modal').remove()"
-          style="padding:7px 16px;border-radius:8px;border:1px solid #2a2a35;
-                 background:transparent;color:#888;cursor:pointer;font-size:12px;">Cancelar</button>
-        <button id="modal-ok"
-          style="padding:7px 16px;border-radius:8px;border:none;
-                 background:#FF5C1A;color:#fff;cursor:pointer;font-size:12px;font-weight:600;">Criar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  const input = document.getElementById('modal-input');
-  const ok = document.getElementById('modal-ok');
-  input.focus();
-  input.select();
-  const confirm = () => { modal.remove(); onConfirm(input.value); };
-  ok.onclick = confirm;
-  input.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') modal.remove(); };
-  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-}
+});
 
 async function deleteProfile() {
   if (currentProfileId === 'default') return;
-  if (!confirm(`Excluir perfil "${allProfiles[currentProfileId]?.name}"?`)) return;
-  await fetch(`/profiles/${currentProfileId}`, {method:'DELETE'});
-  delete allProfiles[currentProfileId];
-  currentProfileId = 'default';
-  renderProfileSelect();
-  await loadProfile('default');
+  const name = allProfiles[currentProfileId]?.name || currentProfileId;
+  openModal('Excluir perfil', 'Digite "confirmar" para excluir o perfil "' + name + '":', async function(val) {
+    if (val.toLowerCase() !== 'confirmar') return;
+    try {
+      await fetch('/profiles/' + currentProfileId, {method:'DELETE'});
+      delete allProfiles[currentProfileId];
+      currentProfileId = 'default';
+      renderSelect();
+      loadProfile('default');
+    } catch(e) {}
+  });
 }
 
-function updateMemoryStatus(m) {
-  const el = document.getElementById('memory-status');
-  const items = [];
-  if (m.context)        items.push('✅ Contexto do nicho');
-  if (m.preferences)    items.push('✅ Preferências de corte');
-  if (m.instructions)   items.push('✅ Instruções especiais');
-  if (m.channels?.length) items.push(`✅ ${m.channels.length} canal(is) vinculado(s)`);
-  el.innerHTML = items.length
-    ? items.join('<br>') + '<br><br>📡 Ativo nas análises automáticas'
-    : '⚠️ Perfil vazio<br>Configure e salve para personalizar as análises.';
-}
-
-async function saveMemory() {
-  const channels = document.getElementById('mem-channels').value
-    .split(',').map(c=>c.trim()).filter(Boolean);
+async function saveProfile() {
+  const channels = document.getElementById('mem-channels').value.split(',').map(c=>c.trim()).filter(Boolean);
   const data = {
-    id: currentProfileId,
-    name: document.getElementById('mem-name').value || 'Sem nome',
-    context: document.getElementById('mem-context').value,
-    preferences: document.getElementById('mem-preferences').value,
+    id:           currentProfileId,
+    name:         document.getElementById('mem-name').value || 'Sem nome',
+    context:      document.getElementById('mem-context').value,
+    preferences:  document.getElementById('mem-preferences').value,
     instructions: document.getElementById('mem-instructions').value,
     channels,
-    profile_id: currentProfileId,
+    profile_id:   currentProfileId,
   };
   try {
     const r = await fetch('/agent/memory', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
     });
     const res = await r.json();
-    allProfiles[currentProfileId] = res.memory;
-    renderProfileSelect();
+    allProfiles[currentProfileId] = res.memory || data;
+    renderSelect();
     document.getElementById('profile-select').value = currentProfileId;
-    document.getElementById('profile-channels').innerHTML = channels.length ? '🔗 ' + channels.join(', ') : 'Nenhum canal vinculado';
-    updateMemoryStatus(res.memory);
+    document.getElementById('profile-channels').textContent = channels.length ? '🔗 ' + channels.join(', ') : 'Sem canais vinculados';
+    updateStatus(allProfiles[currentProfileId]);
     const badge = document.getElementById('saved-badge');
     badge.style.display = 'block';
-    setTimeout(() => badge.style.display = 'none', 3000);
-  } catch(e) { alert('Erro ao salvar'); }
+    setTimeout(() => badge.style.display = 'none', 2500);
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+function updateStatus(m) {
+  const el = document.getElementById('memory-status');
+  const items = [];
+  if (m.context)        items.push('✅ Contexto');
+  if (m.preferences)    items.push('✅ Preferências');
+  if (m.instructions)   items.push('✅ Instruções');
+  if (m.channels?.length) items.push('✅ ' + m.channels.length + ' canal(is)');
+  el.innerHTML = items.length ? items.join('<br>') + '<br><span style="color:var(--green)">📡 Ativo nas análises</span>'
+                              : '⚠️ Perfil vazio — configure e salve';
 }
 
 // ── Chat ─────────────────────────────────────────────────────
-function addMessage(role, text) {
+function addMsg(role, text) {
   document.getElementById('empty-state')?.remove();
   const msgs = document.getElementById('messages');
-  const typing = document.getElementById('typing');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = `
-    <div class="msg-avatar">${role==='agent'?'🤖':'👤'}</div>
-    <div class="msg-bubble">${text.replace(/</g,'&lt;').replace(/
-/g,'<br>')}</div>`;
-  msgs.insertBefore(div, typing);
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  el.innerHTML = '<div class="avatar">' + (role==='agent'?'🤖':'👤') + '</div>'
+    + '<div class="bubble">' + text.replace(/</g,'&lt;').replace(/
+/g,'<br>') + '</div>';
+  msgs.insertBefore(el, document.getElementById('typing'));
   msgs.scrollTop = msgs.scrollHeight;
 }
 
@@ -387,7 +354,7 @@ function setTyping(show) {
   document.getElementById('messages').scrollTop = 99999;
 }
 
-async function sendMessage() {
+async function sendMsg() {
   const input = document.getElementById('user-input');
   const msg = input.value.trim();
   if (!msg || isLoading) return;
@@ -395,7 +362,7 @@ async function sendMessage() {
   input.value = '';
   autoResize(input);
   document.getElementById('btn-send').disabled = true;
-  addMessage('user', msg);
+  addMsg('user', msg);
   setTyping(true);
   try {
     const r = await fetch('/agent/chat', {
@@ -404,46 +371,33 @@ async function sendMessage() {
     });
     const data = await r.json();
     setTyping(false);
-    addMessage('agent', data.error ? '❌ ' + data.error : data.reply);
+    addMsg('agent', data.error ? '❌ ' + data.error : data.reply);
   } catch(e) {
     setTyping(false);
-    addMessage('agent', '❌ Erro de conexão. Tente novamente.');
+    addMsg('agent', '❌ Erro de conexão.');
   }
   isLoading = false;
   document.getElementById('btn-send').disabled = false;
   input.focus();
 }
 
-function quickSend(text) {
-  document.getElementById('user-input').value = text;
-  sendMessage();
-}
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
+function quickSend(text) { document.getElementById('user-input').value = text; sendMsg(); }
+function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
 
 async function clearChat() {
-  if (!confirm('Limpar histórico de conversa?')) return;
   await fetch('/agent/clear', {method:'POST'});
-  const msgs = document.getElementById('messages');
-  msgs.innerHTML = `
-    <div class="empty-state" id="empty-state">
-      <div class="icon">🤖</div><h2>ViralCut AI</h2>
-      <p>Conversa limpa. Como posso ajudar?</p>
+  document.getElementById('messages').innerHTML = `
+    <div class="empty" id="empty-state">
+      <div class="icon">🤖</div><h2>ViralCut AI</h2><p>Chat limpo. Como posso ajudar?</p>
     </div>
-    <div class="msg agent typing" id="typing" style="display:none">
-      <div class="msg-avatar">🤖</div>
-      <div class="msg-bubble"><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="msg agent" id="typing" style="display:none;">
+      <div class="avatar">🤖</div>
+      <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
     </div>`;
 }
 
-// Inicializar
+// Iniciar
 loadProfiles();
 document.getElementById('user-input').focus();
 </script>
