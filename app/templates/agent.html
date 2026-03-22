@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViralCut AI — Agente</title>
+<style>
+:root { --bg:#0f0f13; --surface:#1a1a22; --border:#2a2a35; --text:#f0f0f5; --muted:#888; --orange:#FF5C1A; --green:#2ecc71; --blue:#3498db; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+/* Header */
+.header { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.agent-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--orange),#ff8c00); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.agent-info h1 { font-size:15px; font-weight:700; }
+.agent-info p { font-size:11px; color:var(--muted); }
+.header a { margin-left:auto; font-size:12px; padding:6px 14px; border-radius:8px; background:var(--orange); color:#fff; text-decoration:none; }
+.header button { font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+
+/* Layout */
+.main { display:flex; flex:1; overflow:hidden; }
+
+/* Sidebar */
+.sidebar { width:270px; background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; flex-shrink:0; }
+.sb { padding:12px 14px; border-bottom:1px solid var(--border); }
+.sb-title { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.sb textarea, .sb input[type=text] { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; padding:7px 9px; font-family:inherit; resize:vertical; }
+.sb textarea { min-height:60px; }
+.sb textarea:focus, .sb input:focus { outline:none; border-color:var(--orange); }
+.btn-save { width:100%; margin-top:7px; padding:7px; border-radius:8px; border:none; background:var(--orange); color:#fff; font-size:12px; font-weight:600; cursor:pointer; }
+.saved { display:none; font-size:11px; color:var(--green); text-align:center; margin-top:4px; }
+
+/* Chat */
+.chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+.msg { display:flex; gap:8px; max-width:88%; }
+.msg.user { align-self:flex-end; flex-direction:row-reverse; }
+.avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; background:var(--border); }
+.msg.agent .avatar { background:linear-gradient(135deg,var(--orange),#ff8c00); }
+.msg.user .avatar { background:var(--blue); }
+.bubble { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:9px 13px; font-size:13px; line-height:1.6; white-space:pre-wrap; }
+.msg.user .bubble { background:var(--orange); border-color:var(--orange); color:#fff; border-radius:14px 14px 4px 14px; }
+.msg.agent .bubble { border-radius:14px 14px 14px 4px; }
+
+/* Typing */
+.dots span { display:inline-block; width:6px; height:6px; background:var(--muted); border-radius:50%; animation:bounce .8s infinite; margin:0 2px; }
+.dots span:nth-child(2){animation-delay:.15s} .dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* Input */
+.input-wrap { padding:12px 16px; background:var(--surface); border-top:1px solid var(--border); display:flex; gap:8px; align-items:flex-end; }
+.input-wrap textarea { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; padding:9px 12px; resize:none; max-height:100px; font-family:inherit; }
+.input-wrap textarea:focus { outline:none; border-color:var(--orange); }
+.btn-send { width:38px; height:38px; border-radius:10px; border:none; background:var(--orange); color:#fff; font-size:16px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.btn-send:disabled { opacity:.4; }
+
+/* Quick prompts */
+.qps { padding:0 16px 10px; display:flex; gap:5px; flex-wrap:wrap; background:var(--surface); }
+.qp { font-size:11px; padding:4px 9px; border-radius:16px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+.qp:hover { border-color:var(--orange); color:var(--orange); }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:center; justify-content:center; }
+.modal-box { background:#1a1a22; border:1px solid #3a3a45; border-radius:16px; padding:24px; width:340px; max-width:92vw; }
+.modal-box h3 { font-size:15px; margin:0 0 6px; }
+.modal-box p { font-size:12px; color:var(--muted); margin:0 0 12px; }
+.modal-box input { width:100%; background:var(--bg); border:2px solid var(--orange); border-radius:8px; color:var(--text); font-size:13px; padding:9px 12px; outline:none; }
+.modal-btns { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
+.modal-btns button { padding:7px 18px; border-radius:8px; font-size:12px; cursor:pointer; }
+.btn-cancel { border:1px solid var(--border); background:transparent; color:var(--muted); }
+.btn-ok { border:none; background:var(--orange); color:#fff; font-weight:600; }
+
+/* Empty */
+.empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); text-align:center; padding:40px; }
+.empty .icon { font-size:44px; }
+.empty h2 { font-size:16px; color:var(--text); }
+.empty p { font-size:12px; max-width:280px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="agent-avatar">🤖</div>
+  <div class="agent-info">
+    <h1>ViralCut AI</h1>
+    <p>Agente especialista em conteúdo viral</p>
+  </div>
+  <button onclick="clearChat()">🗑 Limpar chat</button>
+  <a href="/">← Voltar</a>
+</div>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Seletor de perfil -->
+    <div class="sb">
+      <div class="sb-title">🎭 Perfil Ativo</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select id="profile-select" onchange="switchProfile(this.value)"
+          style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px;">
+          <option value="default">Padrão</option>
+        </select>
+        <button id="btn-new-profile" title="Novo perfil"
+          style="width:32px;height:32px;border-radius:8px;border:1px solid var(--orange);background:transparent;color:var(--orange);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:300;">+</button>
+      </div>
+      <div id="profile-channels" style="font-size:10px;color:var(--muted);margin-top:5px;"></div>
+    </div>
+
+    <!-- Nome e canais -->
+    <div class="sb">
+      <div class="sb-title">📺 Nome e Canais</div>
+      <input type="text" id="mem-name" placeholder="Nome do perfil" style="margin-bottom:6px;">
+      <input type="text" id="mem-channels" placeholder="@canal1, @canal2">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Carrega automaticamente pelo canal detectado</div>
+    </div>
+
+    <!-- Contexto -->
+    <div class="sb">
+      <div class="sb-title">🎯 Contexto do Nicho</div>
+      <textarea id="mem-context" placeholder="Ex: Podcast de empreendedorismo para empresários 30-50 anos..."></textarea>
+    </div>
+
+    <!-- Preferências -->
+    <div class="sb">
+      <div class="sb-title">✂️ Preferências de Corte</div>
+      <textarea id="mem-preferences" placeholder="Ex: Priorizar revelações pessoais, evitar técnico..."></textarea>
+    </div>
+
+    <!-- Instruções -->
+    <div class="sb">
+      <div class="sb-title">📌 Instruções Especiais</div>
+      <textarea id="mem-instructions" placeholder="Ex: Score mínimo 85, máximo 3 clipes..."></textarea>
+      <div style="display:flex;gap:6px;margin-top:7px;">
+        <button class="btn-save" onclick="saveProfile()" style="flex:1;">💾 Salvar perfil</button>
+        <button id="btn-delete" onclick="deleteProfile()"
+          style="padding:7px 10px;border-radius:8px;border:1px solid #e74c3c;background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;display:none;">🗑</button>
+      </div>
+      <div class="saved" id="saved-badge">✅ Salvo!</div>
+    </div>
+
+    <!-- Status -->
+    <div class="sb">
+      <div class="sb-title">📊 Status</div>
+      <div id="memory-status" style="font-size:11px;color:var(--muted);line-height:1.7;">Carregando...</div>
+    </div>
+
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="empty" id="empty-state">
+        <div class="icon">🤖</div>
+        <h2>ViralCut AI</h2>
+        <p>Olá! Sou seu agente especialista em conteúdo viral. Configure um perfil na barra lateral e comece a conversar.</p>
+      </div>
+      <div class="msg agent" id="typing" style="display:none;">
+        <div class="avatar">🤖</div>
+        <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>
+
+    <div class="qps">
+      <button class="qp" onclick="quickSend('Como você analisa um clipe viral?')">Como você analisa?</button>
+      <button class="qp" onclick="quickSend('Quais gatilhos funcionam melhor no TikTok brasileiro?')">Gatilhos TikTok BR</button>
+      <button class="qp" onclick="quickSend('Como definir a duração ideal dos clipes para meu nicho?')">Duração ideal</button>
+      <button class="qp" onclick="quickSend('Dicas para melhorar os hooks de abertura dos clipes')">Hooks de abertura</button>
+    </div>
+
+    <div class="input-wrap">
+      <textarea id="user-input" placeholder="Fale com o agente... (Enter envia, Shift+Enter nova linha)"
+        rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="btn-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal customizado -->
+<div class="modal-overlay" id="modal" style="display:none;" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <h3 id="modal-title">Novo Perfil</h3>
+    <p id="modal-label">Digite o nome do nicho:</p>
+    <input type="text" id="modal-input" placeholder="Ex: Empreendedorismo, Culinária, Espiritualidade..."
+      onkeydown="modalKey(event)">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-ok" onclick="confirmModal()">Criar perfil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let isLoading = false;
+let currentProfileId = 'default';
+let allProfiles = {};
+let modalCallback = null;
+
+// ── Modal ────────────────────────────────────────────────────
+function openModal(title, label, cb) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-label').textContent = label;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal').style.display = 'flex';
+  document.getElementById('modal-input').focus();
+  modalCallback = cb;
+}
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  modalCallback = null;
+}
+function closeModalOutside(e) {
+  if (e.target.id === 'modal') closeModal();
+}
+function confirmModal() {
+  const val = document.getElementById('modal-input').value.trim();
+  if (!val) { document.getElementById('modal-input').focus(); return; }
+  closeModal();
+  if (modalCallback) modalCallback(val);
+}
+function modalKey(e) {
+  if (e.key === 'Enter') confirmModal();
+  if (e.key === 'Escape') closeModal();
+}
+
+// ── Perfis ───────────────────────────────────────────────────
+async function loadProfiles() {
+  try {
+    const r = await fetch('/profiles');
+    allProfiles = await r.json();
+    if (!allProfiles['default']) {
+      allProfiles['default'] = {id:'default', name:'Padrão', context:'', preferences:'', instructions:'', channels:[]};
+    }
+    renderSelect();
+    loadProfile(currentProfileId);
+  } catch(e) {
+    console.error('Erro ao carregar perfis:', e);
+    updateStatus({});
+  }
+}
+
+function renderSelect() {
+  const sel = document.getElementById('profile-select');
+  sel.innerHTML = Object.values(allProfiles)
+    .map(p => `<option value="${p.id}" ${p.id===currentProfileId?'selected':''}>${p.name||p.id}</option>`)
+    .join('');
+}
+
+function loadProfile(id) {
+  currentProfileId = id;
+  const p = allProfiles[id] || {name:'', context:'', preferences:'', instructions:'', channels:[]};
+  document.getElementById('mem-name').value         = p.name         || '';
+  document.getElementById('mem-context').value      = p.context      || '';
+  document.getElementById('mem-preferences').value  = p.preferences  || '';
+  document.getElementById('mem-instructions').value = p.instructions || '';
+  document.getElementById('mem-channels').value     = (p.channels||[]).join(', ');
+  document.getElementById('profile-channels').textContent =
+    p.channels?.length ? '🔗 ' + p.channels.join(', ') : 'Sem canais vinculados';
+  document.getElementById('btn-delete').style.display = id !== 'default' ? 'inline-block' : 'none';
+  updateStatus(p);
+}
+
+function switchProfile(id) { loadProfile(id); }
+
+document.getElementById('btn-new-profile').addEventListener('click', function() {
+  openModal('Novo Perfil', 'Nome do nicho (ex: Empreendedorismo, Culinária):', async function(name) {
+    const id = 'p_' + Date.now();
+    const newP = {id, name, context:'', preferences:'', instructions:'', channels:[]};
+    try {
+      await fetch('/profiles/' + id, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(newP)
+      });
+      allProfiles[id] = newP;
+      currentProfileId = id;
+      renderSelect();
+      document.getElementById('profile-select').value = id;
+      loadProfile(id);
+    } catch(e) { alert('Erro ao criar perfil: ' + e.message); }
+  });
+});
+
+async function deleteProfile() {
+  if (currentProfileId === 'default') return;
+  const name = allProfiles[currentProfileId]?.name || currentProfileId;
+  openModal('Excluir perfil', 'Digite "confirmar" para excluir o perfil "' + name + '":', async function(val) {
+    if (val.toLowerCase() !== 'confirmar') return;
+    try {
+      await fetch('/profiles/' + currentProfileId, {method:'DELETE'});
+      delete allProfiles[currentProfileId];
+      currentProfileId = 'default';
+      renderSelect();
+      loadProfile('default');
+    } catch(e) {}
+  });
+}
+
+async function saveProfile() {
+  const channels = document.getElementById('mem-channels').value.split(',').map(c=>c.trim()).filter(Boolean);
+  const data = {
+    id:           currentProfileId,
+    name:         document.getElementById('mem-name').value || 'Sem nome',
+    context:      document.getElementById('mem-context').value,
+    preferences:  document.getElementById('mem-preferences').value,
+    instructions: document.getElementById('mem-instructions').value,
+    channels,
+    profile_id:   currentProfileId,
+  };
+  try {
+    const r = await fetch('/agent/memory', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+    });
+    const res = await r.json();
+    allProfiles[currentProfileId] = res.memory || data;
+    renderSelect();
+    document.getElementById('profile-select').value = currentProfileId;
+    document.getElementById('profile-channels').textContent = channels.length ? '🔗 ' + channels.join(', ') : 'Sem canais vinculados';
+    updateStatus(allProfiles[currentProfileId]);
+    const badge = document.getElementById('saved-badge');
+    badge.style.display = 'block';
+    setTimeout(() => badge.style.display = 'none', 2500);
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+function updateStatus(m) {
+  const el = document.getElementById('memory-status');
+  const items = [];
+  if (m.context)        items.push('✅ Contexto');
+  if (m.preferences)    items.push('✅ Preferências');
+  if (m.instructions)   items.push('✅ Instruções');
+  if (m.channels?.length) items.push('✅ ' + m.channels.length + ' canal(is)');
+  el.innerHTML = items.length ? items.join('<br>') + '<br><span style="color:var(--green)">📡 Ativo nas análises</span>'
+                              : '⚠️ Perfil vazio — configure e salve';
+}
+
+// ── Chat ─────────────────────────────────────────────────────
+function addMsg(role, text) {
+  document.getElementById('empty-state')?.remove();
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  el.innerHTML = '<div class="avatar">' + (role==='agent'?'🤖':'👤') + '</div>'
+    + '<div class="bubble">' + text.replace(/</g,'&lt;').replace(/
+/g,'<br>') + '</div>';
+  msgs.insertBefore(el, document.getElementById('typing'));
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function setTyping(show) {
+  document.getElementById('typing').style.display = show ? 'flex' : 'none';
+  document.getElementById('messages').scrollTop = 99999;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('user-input');
+  const msg = input.value.trim();
+  if (!msg || isLoading) return;
+  isLoading = true;
+  input.value = '';
+  autoResize(input);
+  document.getElementById('btn-send').disabled = true;
+  addMsg('user', msg);
+  setTyping(true);
+  try {
+    const r = await fetch('/agent/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg, profile_id: currentProfileId})
+    });
+    const data = await r.json();
+    setTyping(false);
+    addMsg('agent', data.error ? '❌ ' + data.error : data.reply);
+  } catch(e) {
+    setTyping(false);
+    addMsg('agent', '❌ Erro de conexão.');
+  }
+  isLoading = false;
+  document.getElementById('btn-send').disabled = false;
+  input.focus();
+}
+
+function quickSend(text) { document.getElementById('user-input').value = text; sendMsg(); }
+function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+
+async function clearChat() {
+  await fetch('/agent/clear', {method:'POST'});
+  document.getElementById('messages').innerHTML = `
+    <div class="empty" id="empty-state">
+      <div class="icon">🤖</div><h2>ViralCut AI</h2><p>Chat limpo. Como posso ajudar?</p>
+    </div>
+    <div class="msg agent" id="typing" style="display:none;">
+      <div class="avatar">🤖</div>
+      <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
+    </div>`;
+}
+
+// Iniciar
+loadProfiles();
+document.getElementById('user-input').focus();
+</script>
+</body>
+</html>
